@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StegoSafe — Terminal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0a0a0f;
+            --bg-card: #111118;
+            --bg-card-hover: #16161f;
+            --bg-input: #0e0e16;
+            --border: rgba(255,255,255,0.07);
+            --border-hover: rgba(255,255,255,0.14);
+            --border-focus: rgba(108,142,247,0.5);
+            --text-primary: #f0f0f5;
+            --text-secondary: #7a7a8c;
+            --text-muted: #4a4a5a;
+            --accent: #6c8ef7;
+            --accent-dim: rgba(108,142,247,0.1);
+            --accent-dim-hover: rgba(108,142,247,0.18);
+            --green: #3ecf8e;
+            --green-dim: rgba(62,207,142,0.1);
+            --green-border: rgba(62,207,142,0.2);
+            --red-dim: rgba(240,95,95,0.1);
+            --red-border: rgba(240,95,95,0.25);
+            --red: #f05f5f;
+            --font-sans: 'DM Sans', sans-serif;
+            --font-mono: 'DM Mono', monospace;
+            --radius: 10px;
+            --radius-sm: 6px;
+        }
+
+        html, body {
+            min-height: 100%;
+            background: var(--bg);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 15px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+            background-size: 48px 48px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .page {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── NAV ── */
+        nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 40px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .logo-mark {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--accent-dim);
+            border: 1px solid rgba(108,142,247,0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .logo-mark svg { width: 16px; height: 16px; }
+
+        .logo-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-primary);
+            letter-spacing: -0.2px;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .nav-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border: 1px solid var(--border);
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
+            transition: color 0.15s, border-color 0.15s;
+        }
+        .nav-back:hover { color: var(--text-primary); border-color: var(--border-hover); }
+        .nav-back svg { width: 13px; height: 13px; }
+
+        .nav-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-family: var(--font-mono);
+            color: var(--green);
+            background: var(--green-dim);
+            border: 1px solid var(--green-border);
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .pulse-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.85); }
+        }
+
+        /* ── PAGE TITLE ── */
+        .page-header {
+            padding: 40px 40px 0;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            opacity: 0;
+            animation: fadeUp 0.4s ease 0.1s forwards;
+        }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 500;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+        }
+
+        .page-header p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* ── MAIN GRID ── */
+        .workspace {
+            flex: 1;
+            padding: 32px 40px 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            align-items: start;
+        }
+
+        /* ── PANEL ── */
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            opacity: 0;
+            animation: fadeUp 0.4s ease forwards;
+        }
+
+        .panel:nth-child(1) { animation-delay: 0.15s; }
+        .panel:nth-child(2) { animation-delay: 0.22s; }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .panel-icon svg { width: 14px; height: 14px; }
+
+        .panel-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            letter-spacing: -0.1px;
+        }
+
+        .panel-body {
+            padding: 20px;
+        }
+
+        /* ── FIELD ── */
+        .field { margin-bottom: 20px; }
+        .field:last-child { margin-bottom: 0; }
+
+        .field-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            font-family: var(--font-mono);
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 8px;
+        }
+
+        /* ── DROP ZONE ── */
+        .drop-zone {
+            border: 1px dashed var(--border-hover);
+            border-radius: var(--radius-sm);
+            background: var(--bg-input);
+            height: 160px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drop-zone:hover {
+            border-color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        .drop-zone.drag-over {
+            border-color: var(--accent);
+            background: var(--accent-dim-hover);
+            border-style: solid;
+        }
+
+        .drop-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .drop-zone-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .drop-zone-icon svg { width: 18px; height: 18px; }
+
+        .drop-zone-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 2px;
+        }
+
+        .drop-zone-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .drop-zone-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 12px;
+        }
+
+        .drop-zone-loaded {
+            border-style: solid;
+            border-color: var(--green-border);
+            background: var(--green-dim);
+        }
+
+        /* ── TEXTAREA ── */
+        textarea {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border-hover);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 12px 14px;
+            resize: vertical;
+            min-height: 100px;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        textarea::placeholder { color: var(--text-muted); }
+        textarea:focus { border-color: var(--border-focus); }
+
+        /* ── BUTTONS ── */
+        .btn-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 11px 18px;
+            font-family: var(--font-sans);
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            border: none;
+            transition: opacity 0.15s, transform 0.15s, background 0.15s;
+            letter-spacing: -0.1px;
+        }
+
+        .btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+        .btn:active { transform: scale(0.98); }
+
+        .btn-action {
+            background: var(--text-primary);
+            color: var(--bg);
+        }
+        .btn-action:hover { opacity: 0.88; }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+        .btn-ghost:hover { color: var(--text-primary); border-color: var(--border-hover); background: var(--bg-card-hover); }
+
+        /* ── RESULT BOX ── */
+        .result-box {
+            margin-top: 20px;
+            border: 1px solid var(--green-border);
+            border-radius: var(--radius-sm);
+            background: var(--green-dim);
+            overflow: hidden;
+            animation: fadeUp 0.3s ease forwards;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--green-border);
+        }
+
+        .result-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-family: var(--font-mono);
+            color: var(--green);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .result-badge svg { width: 12px; height: 12px; }
+
+        .result-copy {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: color 0.15s;
+            padding: 0;
+        }
+        .result-copy:hover { color: var(--text-secondary); }
+
+        .result-body {
+            padding: 14px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--text-primary);
+            line-height: 1.7;
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            padding: 20px 40px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .footer-text {
+            font-size: 12px;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 800px) {
+            nav, .page-header, .workspace, footer { padding-left: 20px; padding-right: 20px; }
+            .workspace { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+
+    <!-- NAV -->
+    <nav>
+        <a class="nav-logo" href="/">
+            <div class="logo-mark">
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 1.5L13.5 4.25V9C13.5 12 11 14.25 8 15.5C5 14.25 2.5 12 2.5 9V4.25L8 1.5Z" stroke="#6c8ef7" stroke-width="1.25" stroke-linejoin="round"/>
+                    <path d="M5.5 8l1.75 1.75L10.5 6.5" stroke="#6c8ef7" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <span class="logo-name">StegoSafe</span>
+        </a>
+        <div class="nav-right">
+            <div class="nav-pill">
+                <div class="pulse-dot"></div>
+                Engine active
+            </div>
+            <a href="/" class="nav-back">
+                <svg viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 2.5L4 6.5l4 4" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Home
+            </a>
+        </div>
+    </nav>
+
+    <!-- PAGE TITLE -->
+    <div class="page-header">
+        <h1>Terminal</h1>
+        <p>Embed or extract hidden messages from images using LSB steganography.</p>
+    </div>
+
+    <!-- WORKSPACE -->
+    <div class="workspace">
+
+        <!-- ENCRYPT PANEL -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-icon" style="background: var(--accent-dim);">
+                    <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="2.5" y="6.5" width="9" height="6.5" rx="1.25" stroke="#6c8ef7" stroke-width="1.1"/>
+                        <path d="M4.5 6.5V4.5a2.5 2.5 0 015 0v2" stroke="#6c8ef7" stroke-width="1.1" stroke-linecap="round"/>
+                        <circle cx="7" cy="9.75" r="0.85" fill="#6c8ef7"/>
+                    </svg>
+                </div>
+                <span class="panel-title">Encrypt &amp; embed</span>
+            </div>
+            <div class="panel-body">
+                <form action="/encrypt" method="POST" enctype="multipart/form-data" id="encryptForm">
+                    <div class="field">
+                        <label class="field-label">Carrier image</label>
+                        <div class="drop-zone" id="carrierDropZone">
+                            <input type="file" name="file" id="carrierImage" accept="image/*" required>
+                            <div id="carrierContent">
+                                <div class="drop-zone-icon">
+                                    <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="2" y="2" width="14" height="14" rx="2.5" stroke="#4a4a5a" stroke-width="1.25"/>
+                                        <circle cx="6.5" cy="6.5" r="1.5" stroke="#4a4a5a" stroke-width="1.1"/>
+                                        <path d="M2 12l4-3.5 3 2.5 2.5-2 4.5 4" stroke="#4a4a5a" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <div class="drop-zone-title">Drop image here</div>
+                                <div class="drop-zone-sub">or click to browse · PNG recommended</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="field-label" for="secretMessage">Secret message</label>
+                        <textarea
+                            name="secret_text"
+                            id="secretMessage"
+                            rows="4"
+                            placeholder="Type the message to hide inside the image..."
+                            required
+                        ></textarea>
+                    </div>
+
+                    <div class="btn-row">
+                        <button type="submit" class="btn btn-action">
+                            <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M7 1v9M4 7l3 3 3-3" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M2 11h10" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
+                            </svg>
+                            Embed message
+                        </button>
+                        <button type="button" class="btn btn-ghost" onclick="clearEncryptForm()">
+                            Clear
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- DECRYPT PANEL -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-icon" style="background: var(--green-dim);">
+                    <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="7" cy="7" r="5" stroke="#3ecf8e" stroke-width="1.1"/>
+                        <path d="M4.5 7l1.75 1.75L9.5 5.5" stroke="#3ecf8e" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <span class="panel-title">Decode &amp; extract</span>
+            </div>
+            <div class="panel-body">
+                <form action="/decrypt" method="POST" enctype="multipart/form-data" id="decryptForm">
+                    <div class="field">
+                        <label class="field-label">Encoded image</label>
+                        <div class="drop-zone" id="encryptedDropZone">
+                            <input type="file" name="file" id="encryptedImage" accept="image/*" required>
+                            <div id="encryptedContent">
+                                <div class="drop-zone-icon">
+                                    <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M4 2h7l5 5v9a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="#4a4a5a" stroke-width="1.25"/>
+                                        <path d="M11 2v5h5" stroke="#4a4a5a" stroke-width="1.1" stroke-linecap="round"/>
+                                        <circle cx="7.5" cy="11.5" r="1.5" stroke="#4a4a5a" stroke-width="1.1"/>
+                                        <path d="M9 11.5h3" stroke="#4a4a5a" stroke-width="1.1" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="drop-zone-title">Drop encoded image here</div>
+                                <div class="drop-zone-sub">or click to browse</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="btn-row">
+                        <button type="submit" class="btn btn-action">
+                            <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.25"/>
+                                <path d="M4.5 7l1.75 1.75L9.5 5.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Extract message
+                        </button>
+                        <button type="button" class="btn btn-ghost" onclick="clearDecryptForm()">
+                            Clear
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Decryption Result (Jinja conditional) -->
+                {% if message %}
+                <div class="result-box" id="decryptResult">
+                    <div class="result-header">
+                        <div class="result-badge">
+                            <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="6" cy="6" r="4.5" stroke="#3ecf8e" stroke-width="1.1"/>
+                                <path d="M4 6l1.4 1.4L8 4.5" stroke="#3ecf8e" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Message extracted
+                        </div>
+                        <button class="result-copy" onclick="copyResult()">copy</button>
+                    </div>
+                    <div class="result-body" id="extractedMessage">{{ message }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <span class="footer-text">StegoSafe · LSB Steganography</span>
+        <span class="footer-text">All processing is local — nothing is uploaded</span>
+    </footer>
+
+</div>
+<script>
+    function setupDropZone(dropZoneId, inputId, contentId) {
+        const zone = document.getElementById(dropZoneId);
+        const input = document.getElementById(inputId);
+        const content = document.getElementById(contentId);
+
+        ['dragenter','dragover','dragleave','drop'].forEach(e => {
+            zone.addEventListener(e, ev => { ev.preventDefault(); ev.stopPropagation(); });
+        });
+
+        ['dragenter','dragover'].forEach(e => {
+            zone.addEventListener(e, () => zone.classList.add('drag-over'));
+        });
+
+        ['dragleave','drop'].forEach(e => {
+            zone.addEventListener(e, () => zone.classList.remove('drag-over'));
+        });
+
+        zone.addEventListener('drop', e => {
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                input.files = files;
+                showPreview(files[0], zone, content);
+            }
+        });
+
+        input.addEventListener('change', e => {
+            if (e.target.files.length) showPreview(e.target.files[0], zone, content);
+        });
+    }
+
+    function showPreview(file, zone, content) {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            content.innerHTML = `<img src="${e.target.result}" alt="Preview" class="drop-zone-preview">`;
+            zone.classList.add('drop-zone-loaded');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function clearEncryptForm() {
+        document.getElementById('encryptForm').reset();
+        const zone = document.getElementById('carrierDropZone');
+        zone.classList.remove('drop-zone-loaded');
+        document.getElementById('carrierContent').innerHTML = `
+            <div class="drop-zone-icon">
+                <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="2" width="14" height="14" rx="2.5" stroke="#4a4a5a" stroke-width="1.25"/>
+                    <circle cx="6.5" cy="6.5" r="1.5" stroke="#4a4a5a" stroke-width="1.1"/>
+                    <path d="M2 12l4-3.5 3 2.5 2.5-2 4.5 4" stroke="#4a4a5a" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div class="drop-zone-title">Drop image here</div>
+            <div class="drop-zone-sub">or click to browse · PNG recommended</div>`;
+    }
+
+    function clearDecryptForm() {
+        document.getElementById('decryptForm').reset();
+        const zone = document.getElementById('encryptedDropZone');
+        zone.classList.remove('drop-zone-loaded');
+        document.getElementById('encryptedContent').innerHTML = `
+            <div class="drop-zone-icon">
+                <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 2h7l5 5v9a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="#4a4a5a" stroke-width="1.25"/>
+                    <path d="M11 2v5h5" stroke="#4a4a5a" stroke-width="1.1" stroke-linecap="round"/>
+                    <circle cx="7.5" cy="11.5" r="1.5" stroke="#4a4a5a" stroke-width="1.1"/>
+                    <path d="M9 11.5h3" stroke="#4a4a5a" stroke-width="1.1" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <div class="drop-zone-title">Drop encoded image here</div>
+            <div class="drop-zone-sub">or click to browse</div>`;
+    }
+
+    function copyResult() {
+        const text = document.getElementById('extractedMessage')?.innerText;
+        if (text) navigator.clipboard.writeText(text).then(() => {
+            const btn = document.querySelector('.result-copy');
+            btn.textContent = 'copied!';
+            setTimeout(() => btn.textContent = 'copy', 1500);
+        });
+    }
+
+    setupDropZone('carrierDropZone', 'carrierImage', 'carrierContent');
+    setupDropZone('encryptedDropZone', 'encryptedImage', 'encryptedContent');
+</script>
+</body>
+</html>

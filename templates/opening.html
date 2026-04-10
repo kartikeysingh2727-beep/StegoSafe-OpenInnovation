@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StegoSafe — Secure Data Hiding in Images</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0a0a0f;
+            --bg-card: #111118;
+            --bg-card-hover: #16161f;
+            --border: rgba(255,255,255,0.07);
+            --border-hover: rgba(255,255,255,0.14);
+            --text-primary: #f0f0f5;
+            --text-secondary: #7a7a8c;
+            --text-muted: #4a4a5a;
+            --accent: #6c8ef7;
+            --accent-dim: rgba(108,142,247,0.12);
+            --accent-dim-hover: rgba(108,142,247,0.2);
+            --green: #3ecf8e;
+            --green-dim: rgba(62,207,142,0.1);
+            --font-sans: 'DM Sans', sans-serif;
+            --font-mono: 'DM Mono', monospace;
+        }
+
+        html, body {
+            height: 100%;
+            background: var(--bg);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 15px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Subtle grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 48px 48px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Radial glow center */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -60%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(ellipse, rgba(108,142,247,0.06) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .page {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── NAV ── */
+        nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 40px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .logo-mark {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--accent-dim);
+            border: 1px solid rgba(108,142,247,0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .logo-mark svg { width: 16px; height: 16px; }
+
+        .logo-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-primary);
+            letter-spacing: -0.2px;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .nav-link {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+        .nav-link:hover { color: var(--text-primary); }
+
+        .nav-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-family: var(--font-mono);
+            color: var(--green);
+            background: var(--green-dim);
+            border: 1px solid rgba(62,207,142,0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .pulse-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.85); }
+        }
+
+        /* ── HERO ── */
+        .hero {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 24px 64px;
+            text-align: center;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-family: var(--font-mono);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            padding: 5px 14px;
+            border-radius: 20px;
+            margin-bottom: 32px;
+            letter-spacing: 0.03em;
+            opacity: 0;
+            animation: fadeUp 0.5s ease 0.1s forwards;
+        }
+
+        .eyebrow-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--accent);
+        }
+
+        h1 {
+            font-size: clamp(36px, 5vw, 58px);
+            font-weight: 300;
+            color: var(--text-primary);
+            letter-spacing: -1.5px;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            max-width: 560px;
+            opacity: 0;
+            animation: fadeUp 0.5s ease 0.2s forwards;
+        }
+
+        h1 em {
+            font-style: normal;
+            color: var(--accent);
+        }
+
+        .hero-sub {
+            font-size: 16px;
+            color: var(--text-secondary);
+            font-weight: 300;
+            max-width: 400px;
+            margin-bottom: 40px;
+            line-height: 1.7;
+            opacity: 0;
+            animation: fadeUp 0.5s ease 0.3s forwards;
+        }
+
+        .cta-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 64px;
+            opacity: 0;
+            animation: fadeUp 0.5s ease 0.4s forwards;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 22px;
+            background: var(--text-primary);
+            color: var(--bg);
+            font-family: var(--font-sans);
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: opacity 0.15s, transform 0.15s;
+            letter-spacing: -0.1px;
+        }
+        .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+        .btn-primary:active { transform: translateY(0); }
+
+        .btn-primary svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+        .btn-ghost {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 11px 20px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-family: var(--font-sans);
+            font-size: 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.15s, border-color 0.15s, transform 0.15s;
+            letter-spacing: -0.1px;
+        }
+        .btn-ghost:hover { color: var(--text-primary); border-color: var(--border-hover); transform: translateY(-1px); }
+
+        /* ── STATS STRIP ── */
+        .stats {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--bg-card);
+            overflow: hidden;
+            opacity: 0;
+            animation: fadeUp 0.5s ease 0.5s forwards;
+        }
+
+        .stat-item {
+            padding: 16px 32px;
+            text-align: center;
+            border-right: 1px solid var(--border);
+        }
+        .stat-item:last-child { border-right: none; }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 500;
+            font-family: var(--font-mono);
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+            margin-bottom: 2px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        /* ── CARDS ── */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .feature-card {
+            background: var(--bg);
+            padding: 28px 32px;
+            transition: background 0.2s;
+        }
+        .feature-card:hover { background: var(--bg-card); }
+
+        .feature-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+        }
+        .feature-icon svg { width: 16px; height: 16px; }
+
+        .feature-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            letter-spacing: -0.2px;
+        }
+
+        .feature-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            padding: 20px 40px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .footer-text {
+            font-size: 12px;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+        }
+
+        .footer-link {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+        .footer-link:hover { color: var(--text-secondary); }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 720px) {
+            nav { padding: 16px 20px; }
+            .nav-right .nav-link { display: none; }
+            h1 { font-size: 36px; }
+            .cta-group { flex-direction: column; width: 100%; }
+            .btn-primary, .btn-ghost { width: 100%; justify-content: center; }
+            .stats { flex-direction: column; }
+            .stat-item { border-right: none; border-bottom: 1px solid var(--border); }
+            .stat-item:last-child { border-bottom: none; }
+            .features { grid-template-columns: 1fr; }
+            footer { flex-direction: column; gap: 8px; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+
+    <!-- NAV -->
+    <nav>
+        <a class="nav-logo" href="/">
+            <div class="logo-mark">
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 1.5L13.5 4.25V9C13.5 12 11 14.25 8 15.5C5 14.25 2.5 12 2.5 9V4.25L8 1.5Z" stroke="#6c8ef7" stroke-width="1.25" stroke-linejoin="round"/>
+                    <path d="M5.5 8l1.75 1.75L10.5 6.5" stroke="#6c8ef7" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <span class="logo-name">StegoSafe</span>
+        </a>
+        <div class="nav-right">
+            <a class="nav-link" href="https://github.com" target="_blank">GitHub</a>
+            <div class="nav-pill">
+                <div class="pulse-dot"></div>
+                Engine active
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="eyebrow">
+            <div class="eyebrow-dot"></div>
+            Steganography · LSB encoding · Local processing
+        </div>
+        <h1>Hide messages inside<br><em>plain images</em></h1>
+        <p class="hero-sub">
+            Embed encrypted text into any image pixel-perfectly.
+            No visible changes. No server uploads. Fully private.
+        </p>
+        <div class="cta-group">
+            <a href="/terminal" class="btn-primary">
+                <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.25"/>
+                    <path d="M4 5l2.5 2L4 9" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M8 9h2" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
+                </svg>
+                Open terminal
+            </a>
+            <a href="https://github.com" class="btn-ghost" target="_blank">
+                View source →
+            </a>
+        </div>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value">LSB</div>
+                <div class="stat-label">Encoding</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">PNG</div>
+                <div class="stat-label">Lossless</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">Local</div>
+                <div class="stat-label">Processing</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">0 kb</div>
+                <div class="stat-label">Uploaded</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FEATURE CARDS -->
+    <div class="features">
+        <div class="feature-card">
+            <div class="feature-icon">
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3" y="7.5" width="10" height="7" rx="1.5" stroke="#6c8ef7" stroke-width="1.25"/>
+                    <path d="M5.5 7.5V5a2.5 2.5 0 015 0v2.5" stroke="#6c8ef7" stroke-width="1.25" stroke-linecap="round"/>
+                    <circle cx="8" cy="11" r="1" fill="#6c8ef7"/>
+                </svg>
+            </div>
+            <div class="feature-title">Encrypt & embed</div>
+            <div class="feature-desc">Write a secret message and embed it invisibly into any PNG carrier image using least-significant-bit encoding.</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="8" cy="8" r="5.5" stroke="#3ecf8e" stroke-width="1.25"/>
+                    <path d="M5.5 8l1.75 1.75L10.5 6" stroke="#3ecf8e" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div class="feature-title">Decode instantly</div>
+            <div class="feature-desc">Upload any StegoSafe-encoded image and extract the hidden message in one click. No keys, no passwords needed.</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 1.5v4M8 10.5v4M1.5 8h4M10.5 8h4" stroke="#7a7a8c" stroke-width="1.25" stroke-linecap="round"/>
+                    <circle cx="8" cy="8" r="2.5" stroke="#7a7a8c" stroke-width="1.25"/>
+                </svg>
+            </div>
+            <div class="feature-title">Private by design</div>
+            <div class="feature-desc">All processing runs entirely in your browser. Nothing is sent to any server — your images and messages stay with you.</div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <span class="footer-text">StegoSafe · Open Source</span>
+        <a class="footer-link" href="https://github.com" target="_blank">github.com/stegosafe →</a>
+    </footer>
+
+</div>
+</body>
+</html>
